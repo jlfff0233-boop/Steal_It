@@ -1,0 +1,407 @@
+# DoneMemo.txt
+
+# ==================================================
+
+# PURPOSE
+
+# 확정된 결정, 시스템 기준, 완료 내역, 변경 이력을 관리한다.
+
+# ==================================================
+
+* 앞으로 할 일과 미구현 항목은 TodoMemo.txt에서 관리한다.
+* 과거 대화와 메모가 충돌하면 DoneMemo.txt의 DECISION을 먼저 확인한다.
+* 같은 성격의 하위 항목은 세로로 길게 나열하지 않고 "/"로 병렬 정리한다.
+
+# ==================================================
+
+# CURRENT_DECISION
+
+# 1주 마감 기준 확정 제작 방향
+
+# ==================================================
+
+* 현재 프로젝트는 1주 안에 마무리 가능한 범위로 축소한다.
+* 이번 마감 기준 핵심 구현은 아이템 획득/제출, Interact 아이템 들기/내려놓기/던지기, Enemy 공격/스턴, 저장/불러오기, UI 연출, 첫 플레이 튜토리얼로 제한한다.
+* 아지트, 콤보, 복잡한 판매/요리, 대규모 스테이지 확장, 복잡한 스위치 조건은 이번 마감 범위에서 제외하거나 보류한다.
+* 아이템은 계속 상호작용 오브젝트로 유지하되, 이번 마감에서는 물리 기믹과 전투 보조 역할에 집중한다.
+* 적 스턴은 구현 완료 기준으로 본다: 던져진 아이템이 적에게 맞으면 Enemy가 Stun 상태로 전환된다.
+* 사용 가능 횟수를 모두 쓴 Interact 아이템은 현재 비활성화 처리 기준으로 유지한다.
+* 밀기와 굴리기는 현재 보류한다. 사용자가 다시 언급하기 전까지 구현 계획에서 다루지 않는다.
+* 현재 직접 물리 기믹은 Square 아이템 당기기까지 구현된 상태로 본다.
+* 기존 목표 점수 달성식 클리어는 폐기하고 제한 시간 동안 최대한 많은 점수를 모으는 방식으로 변경한다.
+* HUD UI 갱신 이벤트는 HeroModel 직접 구독이 아니라 Hero 이벤트를 통해 구독하는 방향으로 정리한다.
+* 기존 장기 기획은 삭제하지 않고 아래쪽 참고 내용으로 유지한다.
+
+# ==================================================
+
+# CURRENT_STATUS
+
+# 현재 구현 완료 기준
+
+# ==================================================
+
+* 구현 완료: E 획득 / Inventory 제출 / Interact 들기, 내려놓기, 던지기, 제출 / Goal 점수 누적 / Enemy 투사체 공격 / 던진 아이템 Enemy 스턴 / Square 당기기 / BonusTimeItem / BonusLifeItem / ItemBox 가중치 스폰과 드롭 퍼짐 / DamageView / SaveManager JSON 저장 / TitleSceneView 분리 / ClearScene 기록 표시와 삭제 흐름 / 첫 플레이 튜토리얼 / InventoryView 슬롯 표시 / 결과 패널 표시값 보강 / 주요 UI 트윈 연출 / 들고 있는 아이템 기준 Hero 콜라이더 확장 / 튜토리얼 Enemy Init 보장 / 튜토리얼 종료 후 메인 맵 리스폰 포인트 갱신 / Play 맵 재구성 / 함수, 변수, 주석 스타일 1차 정리
+* 남은 핵심 작업: 최종 플레이 테스트 / 맵 발판 높이 미세 조정
+* 보류: 밀기 / 굴리기 / 아지트 / 콤보 / 복잡한 업적 효과 / 복잡한 스위치 조건 / 대규모 스테이지 확장
+
+# ==================================================
+
+# CURRENT_SYSTEM_SPEC
+
+# 1주 마감 기준 시스템 범위
+
+# ==================================================
+
+## [아이템 상호작용]
+
+* 유지: Inventory 아이템 E 획득 / Interact 아이템 들기, 내려놓기, 던지기, 제출
+* 구현: Square 아이템 당기기 / 던진 아이템 적 스턴 / 사용 횟수 소진 시 비활성화
+* 보류: 밀기 / Circle 아이템 굴림 / 사용 횟수 소진 후 지연 파괴 연출
+* 제외 또는 보류: 복잡한 아이템 손상, 가치별 판매 정산, 콤보 보상, 다단계 함정 제거
+
+## [Enemy]
+
+* 유지: Normal / Chase / Stun / Attack 상태 구조
+* 구현: InteractableItem 충돌 시 Enemy.Stunned 호출 후 Stun 상태 전환 / 스턴 중 이동 정지 / 스턴 종료 후 Normal 복귀 / 투사체 공격
+* 주의: 씬에 직접 배치된 튜토리얼 Enemy는 TutorialDirector.Init에서 Enemy.Init을 호출해 상태 객체 초기화를 보장한다
+* 보류: 의심 시스템 세부 완성, 콤보에 따른 감지 범위 증가
+
+## [Square 당기기]
+
+* 구현 범위: Pull 입력 1회당 Square Interact 아이템을 Hero 쪽으로 한 칸 이동
+* 책임 분리: Hero는 입력과 바라보는 방향 판단 / Interacter는 대상에게 당기기 요청 / InteractableItem은 당기기 가능 여부, 무게 기반 시간 계산, 실제 이동 처리
+* 이동 방식: Rigidbody2D.DOMove 사용 / 무게에 따라 이동 시간이 증가 / 최대 이동 시간 제한
+* 현재 상태: Interacter 인스펙터 설정 후 Square 당기기 동작 확인
+
+## [SaveLoad]
+
+* 구현 범위: 저장/불러오기 버튼 흐름 연결 / SaveManager JSON 저장 / ClearScene 기록 표시 / 데이터 삭제
+* 저장 데이터: 최고 점수 / 클리어 횟수 / 누적 획득 아이템 수 / 누적 제출 아이템 수 / 누적 보너스 시간 / 누적 보너스 목숨 수 / 누적 적 스턴 수 / 튜토리얼 완료 여부
+
+## [UI]
+
+* 구현 범위: 목숨/타이머/인벤토리/무게/점수 갱신 안정화 / 데미지 표시 / 결과 패널 표시 / 타이틀 버튼 연결 / 클리어 씬 기록 표시 / 튜토리얼 안내
+* 현재 상태: 목숨 UI와 남은 시간 UI 갱신 확인 / 점수는 목표 점수 없이 현재 누적 점수만 표시 / InventoryView 분리 / DamageView 연결 / 주요 DOTween 연출 추가
+* 보류: 대규모 HUD 리디자인, 아지트 UI, 업적 UI
+
+# ==================================================
+
+# ARCHIVE_NOTE
+
+# 아래 DECISION / SYSTEM_SPEC / IMPLEMENTATION_GUIDE / DONE / LOG는 기존 장기 계획 참고용으로 유지한다.
+
+# ==================================================
+
+# ==================================================
+
+# DECISION
+
+# 확정된 기획 및 구조
+
+# ==================================================
+
+* 아이템은 단순 수집물이 아니라 상호작용 가능한 오브젝트이다.
+* 아이템은 점수 획득과 물리/기믹 상호작용을 동시에 담당한다.
+* 아지트는 별도 씬으로 구현한다.
+* 직접 운반 시스템은 단계적으로 구현한다.
+* 개발 기간은 약 1.5~2개월로 제한한다.
+* Goal은 Inventory 아이템과 Interact 직접 운반 아이템을 모두 제출받는다.
+* Inventory 아이템은 소지 상태로 제출하고, Interact 아이템은 직접 들고 Goal 영역에 가져가 제출한다.
+* 직접 운반은 들기, 내려놓기, 밀기/당기기, 던지기를 구현한다.
+* 끌기 시스템은 구현하지 않는다.
+* 끌기 시스템은 줄이나 손잡이로 아이템을 뒤에서 끌고 다니는 지속형 드래그 이동을 뜻한다.
+* 원형 아이템은 굴림 기반 물리 상호작용에 사용한다.
+* 사각형 아이템은 발판, 스위치, 누름 기믹에 사용한다.
+* 삼각형 아이템은 던지기 기반 함정 제거와 적 스턴에 사용한다.
+* 던지기는 모든 ShapeType 아이템이 가능하지만, 삼각형 아이템은 다른 모양보다 스턴 시간이 길다.
+* 밀기/당기기는 사각형 아이템만 가능하다.
+* 내려놓을 위치가 막혀 있으면 내려놓기를 실패 처리한다.
+* 아이템이 끼이면 플레이어 근처의 유효한 바닥 위치로 복귀시킨다.
+* 스위치는 스테이지별로 다른 조건 타입을 사용할 수 있다.
+* 스위치 조건 타입은 Weight 조건, ShapeType 조건, Weight 합산 조건을 후보로 둔다.
+* 적 스턴은 특정 아이템 충돌로 발생하며, 스턴 중에는 추격을 중단한다.
+* 콤보 위험 증가는 적 의심 증가와 추격 위험 보상에 연결한다.
+* Inventory 아이템도 자동 획득이 아니라 상호작용 키 입력으로 획득한다.
+* Goal 제출은 상호작용 키 입력식으로 처리한다.
+* 입력 우선순위는 E, R, F 순서로 본다.
+* 같은 범위에 여러 대상이 있을 때 상호작용 우선순위는 제출, 들고 있는 아이템, 바닥 아이템, 기믹 순서이다.
+* 던지기 조준은 마우스 조준으로 처리한다.
+* 콤보는 시간 제한이 아니라 발각/상자 개봉 발각/상자 피격 누적/피격 등 위험 이벤트로 해제한다.
+* 스테이지 클리어는 제한 시간 생존과 최저 목표 점수 달성을 함께 사용한다.
+* 세분화된 스위치 조건 타입은 Stage 4 이후부터 보여준다.
+
+# ==================================================
+
+# SYSTEM_SPEC
+
+# 시스템별 기획 기준
+
+# ==================================================
+
+## [아이템 시스템]
+
+* 목적: 아이템을 점수 획득 대상이자 스테이지 공략 도구로 사용한다.
+* 플레이 경험: 가벼운 아이템은 빠르게 회수 / 무거운 아이템은 운반 리스크와 높은 보상 / 직접 운반 아이템은 퍼즐 해결과 위험 보상에 사용
+* 핵심 규칙: CarryType은 운반과 제출 방식 / ShapeType은 물리와 기믹 역할 / ValueType은 점수와 콤보 보상 / Weight는 이동속도, 점프, 밀기, 던지기 패널티
+
+## [CarryType]
+
+* Inventory: E 입력으로 획득 / Goal에서 Hero 기준 제출 / 물리 기믹 역할 없음 / 빠른 수집과 점수 획득 / 최대 소지 무게 제한 있음
+* Interact: 자동 습득 금지 / 들기, 밀기, 던지기 대상 / Goal에서 아이템 기준 제출 / 기믹 해결, 적 스턴, 위험 보상 / 최대 소지 무게 제한 없음
+
+## [Weight]
+
+* Light: 주로 Inventory / 체감 패널티 미세 / 점수 배율 낮거나 기본값
+* Medium: 주로 Interact 기본 무게 / 체감 패널티 약간 느려짐 / Stage 2 직접 운반 학습용
+* Heavy: Interact 고위험 고보상 / 체감 패널티 확실히 느림 / 점수 계산식에서 무게 배율 보상
+* 수치 관리: 이동속도 감소량 / 점프력 감소량 / 점수 배율 / 던지기 거리, 속도, 쿨타임은 ScriptableObject 또는 외부 튜닝값으로 조절
+
+## [ShapeType]
+
+* Circle: 굴림 기반 물리 상호작용 / 경사로, 굴러가는 발판, 원거리 스위치 자극 / 밀기와 당기기 대상 아님 / 상호작용 해제 시 정지 처리
+* Square: 안정적인 받침과 누름 기믹 / 발판, 스위치, 임시 계단, 무게 누름 장치 / MVP 기준 밀기와 당기기 가능
+* Triangle: 던지기 기반 공격적 상호작용 / 함정 제거, 적 스턴, 위험 구간 돌파 / 다른 ShapeType보다 긴 스턴 시간
+
+## [Goal 제출]
+
+* 목적: Inventory와 Interact를 하나의 제출 루프인 점수, 콤보, 판매로 연결한다.
+* 제출 대상: Inventory에 들어간 아이템 / Hero가 직접 들고 있는 Interact 아이템 / Goal 영역 안에 놓인 Interact 아이템
+* 성공 조건: Goal 판정 범위 안 / 중복 제출 아님 / CarryType에 맞는 제출 조건 만족 / 제한 시간 또는 실패 조건에 걸리지 않음 / E 입력 제출
+* 결과: 점수 반영 / 콤보 갱신 / 제출 아이템 축소와 투명화 후 제거 / 판매 또는 요리 결과 전달 / 실패 시 아이템 흩뿌림
+
+## [직접 운반]
+
+* 들기: Interact 아이템 직접 소지 / 무게 패널티 적용 / 이동, 점프, 던지기, 내려놓기만 가능 / 오르기와 타기류 불가
+* 내려놓기: 현재 위치 근처 배치 / 발판, 스위치, 엄폐물, Goal 제출에 사용 / 막힌 위치면 실패 / 끼임 상태면 플레이어 근처 유효 바닥으로 복귀
+* 밀기/당기기: 사각형만 가능 / 수평 이동 중심 / 이동속도 저하와 적 회피 리스크 / 지속형 드래그 이동은 제외
+* 던지기: 모든 ShapeType 가능 / 마우스 조준 / 무게별 거리, 속도, 쿨타임 / 회수 가능 / 손상 시 제출 점수 영향 / 삼각형은 긴 스턴 시간
+
+## [적 의심/추격/스턴]
+
+* 의심: 제출 누적, 상자 개봉 발각, 상자 피격 누적, 콤보 위험 증가와 연결 / 콤보가 높을수록 모든 적 감지 영역 증가 / 들고 이동 자체는 적 영역 밖에서 의심 증가 없음
+* 추격: ItemBox 이벤트와 Enemy 추격 구조 활용 / 적 영역 안에서 ItemBox를 열면 100% 추격 / 감지 영역 이탈 또는 숨기로 해제 가능 / 추격 중 제출 보너스 가능
+* 스턴: 던진 아이템 충돌로 발생 / Circle 가장 짧음, Square 보통, Triangle 가장 김 / 무게와 가치가 높을수록 소폭 증가 / 최대 2회 연속 / 이후 스턴 불가 쿨타임 / 완전 정지 후 감지 상태에 따라 복귀
+
+## [콤보/위험 보상]
+
+* 증가 조건: 아이템 제출 성공 / 고가치 아이템 제출 / Interact 제출은 Inventory보다 높은 보너스
+* 위험 증가: 콤보가 높을수록 모든 적 감지 영역 증가 / 추격 중 제출 보너스 / 무거운 아이템 제출 보너스 후보
+* 해제 조건: 시간 제한 없음 / 운반 중 발각, 상자 개봉 발각, 상자 피격 누적, 피격, 목숨 감소, 스테이지 실패 시 해제
+
+## [요리/판매]
+
+* MVP: 제출된 아이템의 점수와 ValueType을 기반으로 판매 결과 생성 / 복잡한 레시피 조합 제외 / 아지트 씬에서 정산 확인
+* 확장: 특정 조합 보너스 / 스테이지별 추천 판매 품목 / 보상 화면 연출
+
+# ==================================================
+
+# IMPLEMENTATION_GUIDE
+
+# 구현 담당 확인 기준
+
+# ==================================================
+
+## [ItemData]
+
+* 확인 기준: CarryType은 Inventory와 Interact 운반 방식 구분 / ShapeType은 Circle, Square, Triangle 기믹 역할 구분 / ValueType은 점수와 콤보 보상 연결 / Weight는 이동, 점프, 밀기, 던지기 패널티 연결 / ScoreData는 점수 계산만 담당
+
+## [Hero 상호작용]
+
+* 확인 기준: E는 줍기, 들기, 제출, 기본 상호작용 / R은 내려놓기와 상호작용 해제 / F는 던지기 / 대상 우선순위는 제출 > 들고 있는 아이템 > 바닥 아이템 > 기믹
+
+## [Goal 제출]
+
+* 확인 기준: Inventory 제출과 Interact 제출 모두 처리 / Inventory는 Hero 기준 판정 / Interact는 아이템 위치 기준 판정 / 중복 제출 방지 / 제출 성공 시 Score, Combo, Sale 또는 Cooking 결과 연결
+
+## [물리 기믹]
+
+* 확인 기준: Circle은 굴림과 스위치 자극 / Square는 발판과 스위치 누름 / Triangle은 던져서 충돌 이벤트 / 스위치 조건은 Weight, ShapeType, Weight 합산 중 선택 / 세분화 조건은 Stage 4부터 노출
+
+## [EnemyStun]
+
+* 확인 기준: 스턴 발생 조건은 아이템 충돌 / 모든 ShapeType 던지기로 스턴 가능 / Triangle은 긴 스턴 시간 / 스턴 중 Enemy 추격 중단 / 종료 후 감지 상태에 따라 복귀 / 벽 너머 피격과 반복 피격 방지
+
+## [Combo]
+
+* 확인 기준: 제출 성공 시 갱신 / 시간 제한으로 끊지 않음 / 콤보가 높을수록 모든 Enemy 감지 영역 증가 / 추격 중 제출, 무거운 아이템 제출, Interact 제출은 위험 보상 후보 / 발각, 상자 개봉 발각, 상자 피격 누적, 피격 시 해제
+
+## [Stage]
+
+* 확인 기준: Stage 1은 Inventory 수집과 Goal 제출 / Stage 2는 Interact 들기, 내려놓기, 사각형 스위치 / Stage 3은 원형 굴림과 사각형 밀기/당기기 / Stage 4는 삼각형 던지기, 함정 제거, 적 스턴, 세분화 스위치 조건 / 각 스테이지는 새 규칙 1개와 복습 규칙 1개 중심
+
+# ==================================================
+
+# DONE
+
+# 완료된 작업
+
+# ==================================================
+
+* ItemData에 CarryType 적용
+* ShapeType 적용
+* ValueType 적용
+* Weight 적용
+* ScoreData 분리
+* CarryType.Interact 자동 습득 차단
+* ItemBox 이벤트와 Enemy 추격 연결
+* Hero 상호작용 입력 진입점 HandleInteract 추가
+* Inventory 아이템 자동 획득 제거
+* E 입력으로 근처 Inventory 아이템 획득 처리
+* Hero에 들고 있는 아이템 상태 필드 추가
+* Item에 들림/제출/던짐 상태 필드 추가
+* Interact 아이템 들기 처리 추가
+* Interact 아이템 내려놓기 처리 추가
+* Goal에 Inventory 제출 함수와 Interact 제출 함수 분리
+* Hero 제출 이벤트와 Goal 제출 함수 연결
+* PlayScene에서 Goal 점수 변경 이벤트를 SessionView 점수 UI 갱신으로 연결
+* Hero 상호작용 기능을 Interacter로 분리
+* Interacter가 들고 있는 아이템 상태를 관리하도록 정리
+* HeroModel이 인벤토리, 무게, UI 갱신 이벤트를 계속 담당하도록 역할 정리
+* F 입력으로 Aim 상태 진입 처리 추가
+* 좌클릭 입력으로 Interacter를 통해 들고 있는 아이템 Throw 호출 연결
+* InteractableItem.Throw에서 부모 해제, 상태 복구, 레이어 전환, Rigidbody2D.simulated 복구, linearVelocity 기반 속도 적용 처리
+* Enemy 투사체 공격 추가
+* 투사체 포물선 이동 방식 적용
+* 투사체 피격 시 Hero 목숨 감소 확인
+* Hero 목숨 UI 갱신 연결
+* PlayScene 남은 시간 UI 갱신 연결
+* HeroModel의 무게/인벤토리 이벤트를 제거하고 Hero 이벤트를 통해 UI 갱신하도록 구조 변경
+* 기존 목표 점수 표시/달성 구조를 제거하고 현재 점수 누적 표시 방식으로 변경
+* BonusTimeItem 스크립트 추가
+* BonusLifeItem 스크립트 추가
+* ItemBox SpawnRate 기반 가중치 랜덤 선택 적용
+* DamageView 스크립트 추가: 대미지 텍스트 설정, 페이드, 위로 이동, 지속 시간 후 파괴
+
+# ==================================================
+
+# LOG
+
+# 변경 이력
+
+# ==================================================
+
+## 2026-07-04
+
+* 아이템 시스템 방향 변경: 아이템을 수집물에서 상호작용 오브젝트로 확장
+* CarryType/ShapeType 구조 도입: 운반 방식과 물리 역할을 데이터로 분리하기 위함
+* Goal 제출 방식 확정: Inventory와 Interact 운반 방식이 다르므로 둘 다 제출받도록 결정
+* 직접 운반 범위 확정: 들기 / 내려놓기 / 밀기/당기기 / 던지기
+* 끌기 시스템 보류 확정: 줄이나 손잡이로 아이템을 뒤에서 끌고 다니는 지속형 드래그 이동은 제외
+* ShapeType별 역할 확정: 원형은 굴림 / 사각형은 발판과 스위치 / 삼각형은 던지기, 스턴, 함정 제거
+* 적 스턴 방향 확정: 특정 아이템 충돌로 스턴 발생 / 스턴 중 추격 중단
+* 콤보 위험 증가 방향 확정: 콤보를 Enemy 의심 증가와 추격 위험 보상에 연결
+* 문서 구조 재정리: SYSTEM_SPEC / IMPLEMENTATION_GUIDE / NEED_DETAIL 추가
+* 추가 세부 규칙 확정: 모든 ShapeType 던지기 가능 / 삼각형은 긴 스턴 시간 / 밀기와 당기기는 사각형만 가능 / 막힌 위치 내려놓기 실패 / 아이템 끼임은 플레이어 근처 유효 바닥 복귀 / 스위치 조건은 Weight, ShapeType, Weight 합산 가능
+* Hero 입력 우선순위 확정: 입력 우선순위 E, R, F / 대상 우선순위 제출, 들고 있는 아이템, 바닥 아이템, 기믹
+* 세분화된 스위치 조건 타입 도입 시점 확정: 기본 조작 학습 이후인 Stage 4부터 보여줌
+* Hero 아이템 상호작용 1~3단계 진행: HandleInteract 진입 / Inventory E 입력 획득 / 들고 있는 아이템 상태 필드 / Item 상태 필드 / 다음 구현은 Interact 실제 들기
+* 확인 필요: Item.SetHeld 함수 추가 필요 / HandleInteract에서 HoldItem(_holdItem)을 먼저 호출하면 _holdItem null 예외 가능
+
+## 2026-07-05
+
+* 아이템 상호작용 구현 단계 중간 지점 도달: Inventory 자동 획득 제거 / E 입력 획득 흐름 확인 / Interact 들기와 내려놓기 흐름 확인 / Goal 제출은 Inventory와 Interact로 분리 연결
+* 현재 구현 위치: 직접 운반 시스템의 기초 입력, 들기, 내려놓기, 제출 연결까지 진행 / 던지기, 밀기/당기기, 무게 패널티, 스턴, 콤보는 후속 단계
+* 발견된 문제: Hero.HandleSubmit에서 Inventory 제출이 성공하면 Interact 제출이 실행되지 않는 구조 확인 / Inventory와 Interact를 동시에 보유한 상태에서는 둘 다 제출되어야 함
+* 다음 작업: HandleSubmit에서 Inventory 제출과 Interact 제출을 모두 시도 / AddItem 실패 시 아이템 제거 여부 분리 / 제출 흐름 확인 후 던지기 단계 진행
+* 메모 분리: TodoMemo는 미구현/할 일/세부 확정 필요 항목으로 정리 / DoneMemo는 확정 결정/시스템 기준/완료/변경 이력으로 정리
+* Hero 상호작용 분리 진행: Interacter로 들기, 내려놓기, 제출 이벤트, 아이템 탐색 기능 분리 / Hero는 HeroModel과 Interacter 사이를 연결 / HeroModel은 인벤토리와 무게 변경, UI 갱신 이벤트 담당 유지
+* 던지기 기초 구현 진행: F 입력으로 Aim 상태 진입 / 좌클릭 입력으로 들고 있는 아이템 Throw 호출 / 초기에는 AddForce로 작성했으나 이후 linearVelocity 기반으로 변경
+* 발견된 문제: Aim 상태에서 UpdateAimPoint 지속 갱신만으로는 던지기 문제가 해결되지 않음 / 현재 조준 계산은 커서가 가리키는 위치와 방향으로 던지는 의도와 맞지 않음 / Hero 위치 기준 계산과 방향 0 가능성, 힘 배율 부재로 아이템이 머리 위에서 힘없이 떨어질 수 있음
+* 다음 작업: 기존 UpdateAimPoint를 주석 처리하고 조준 계산 재설계 / HoldPoint 또는 아이템 현재 위치 기준으로 커서 월드 좌표 방향 계산 / 방향 0 보정 / 거리와 힘 배율 기반 ThrowPower 계산 / 클릭 확정 시 최신 조준값으로 Throw 호출
+
+## 2026-07-07
+
+* 적 스턴 흐름 수정 및 확인: InteractableItem 충돌 시 Enemy.Stunned(float stunSpan) 호출 / StunState가 EnemyModel의 최신 StunSpan을 읽도록 변경 / 플레이 테스트에서 스턴 상태 동작 확인
+* 프로퍼티 정리: HeroModel.CurrentWeight와 ThrowTimer, EnemyModel.IsTargetIn과 StunSpan이 serialized backing field를 사용하도록 복구
+* 미사용 또는 보류 코드 정리: Enemy._patrolRoutine, Enemy.OnFrontObstacles, EnemyModel._itemBoxLayerMask, InteractableItem.StunSpan 프로퍼티를 주석 처리하고 사유 기록
+* 당기기 구현 진행: Pull 입력, Hero.CheckFrontItem, Interacter.PullItem, InteractableItem.Pull / CheckCanPull / GetPullDuration 연결
+* 당기기 문제 해결: Interacter 인스펙터 설정 누락으로 실제 이동이 보이지 않았음 / 설정 후 Square 당기기 동작 확인
+* 결정: 밀기와 굴리기는 보류 / 사용자가 다시 언급하기 전까지 구현 계획에서 제외
+* Enemy 공격 기능 진행: AttackState에서 Enemy.Attack 호출 / Projectile 생성과 Init 연결 / 적이 바라보는 방향의 전방 위쪽 목표 지점으로 발사하도록 수정
+* Projectile 이동 방식 변경: 매 프레임 linearVelocity를 덮어쓰는 직선 이동이 아니라 Init 시 초기 속도만 적용하고 Rigidbody2D 중력으로 포물선 이동
+* Projectile 충돌 처리 확인: 땅 접촉 시 제거 / Hero 접촉 시 목숨 감소 확인
+* Enemy Animator 위치 이슈 확인: Renderer 자식으로 옮기면 기존 클립 바인딩 경로와 맞지 않아 루트 Animator 유지 방향으로 결정
+* UI 갱신 진행: Hero.OnLifeChanged 구독으로 목숨 UI 갱신 확인 / PlayScene.OnPlayTimeChanged 구독으로 남은 시간 텍스트와 바 갱신 확인
+* 점수 시스템 변경: 목표 점수 달성식이 아니라 제한 시간 동안 최대한 많은 점수를 모으는 누적 점수 방식으로 변경
+* Hero 이벤트 구조 변경: HeroModel이 직접 UI 이벤트를 발행하지 않고 Hero가 OnWeightChanged / OnInventoryChanged / OnLifeChanged를 발행하도록 정리
+* 다음 작업 결정: ItemBox 피격 데미지 표시 UI를 먼저 구현한 뒤 시간 증가 아이템, 목숨 회복 아이템, ItemBox 가중치 스폰과 드롭 위치 퍼짐 처리를 진행
+
+## 2026-07-08
+
+* Hero 제출 이벤트 구조 정리: PlayScene이 Hero.Interacter 이벤트를 직접 구독하지 않고 Hero 이벤트를 구독하도록 변경 / Interacter 기능은 유지하고 Hero.Init에서 Interacter 제출 이벤트를 Hero 이벤트로 중계
+* 보너스 아이템 스크립트 추가: BonusTimeItem은 Hero.GetBonusTime 호출 후 제거 / BonusLifeItem은 Hero.AddLives 호출 후 제거
+* ItemBox 스폰 개선 일부 진행: ItemData.SpawnRate를 사용하는 GetRandomIndex 적용 / SpawnItems에서 가중치 기반으로 아이템 선택
+* DamageView 기초 구현: TMP_Text에 대미지 값 표시 / DOTween 색상 투명화 / 위 방향 이동 / 지속 시간 후 Destroy 처리
+* DamageViewSpawner 생성 시작: DamageView 프리팹 참조 필드만 추가한 상태에서 중단
+* 다음 작업 결정: DamageViewSpawner를 단순 생성/파괴 방식으로 갈지 오브젝트 풀링 방식으로 갈지 결정 후 ItemBox.TakeHit와 연결
+
+## 2026-07-09
+
+* DamageView 표시 문제 확인 및 조정: ItemBox 프리팹의 DamageViewSpawner 참조 누락 확인 / DOTween 대상 파괴 경고는 트윈 생명주기와 Destroy 타이밍 문제로 확인 / DamageView 위치 보정은 offset 매개변수 방식으로 표시 정상화
+* ItemBox 스폰 개선 진행: ItemBoxSpawnSetting에 위치별 ItemBoxPrefab 선택 필드 추가 / SpawnItems 최대 개수 포함 처리 / SpawnRate 합산 기반 아이템 선택 유지 / 드롭 위치 좌우 퍼짐 값은 인스펙터에서 조정하는 방향으로 결정
+* Item과 Enemy 충돌 분리 방향 확정: 평상시 Item은 Enemy와 충돌하지 않고, 던져진 ThrownItem만 Enemy와 충돌해 스턴을 발생시키는 레이어 전환 방식 채택
+* 던지기 방식 수정: AddForce/Impulse 기반에서 InteractableItem의 GetThrowSpeed와 linearVelocity 기반으로 변경 / Rigidbody2D mass는 물리 안정용, ItemData.Weight는 게임 규칙용 무게로 분리
+* InteractableItem 들기 처리 변경: 들고 있는 동안 Rigidbody2D.simulated=false로 HoldPoint를 따라가게 하고, 내려놓기/던지기 시 부모 해제와 위치 확정 후 simulated=true로 복구하는 흐름으로 정리
+* 추락 처리 보강: Hero.BackToStart에서 Interacter.ClearHoldItem을 호출해 들고 있던 Interact 아이템도 제거하도록 연결
+* 들고 있는 아이템 이동 제한 진행: InteractableItem 자체 FixedUpdate 추적은 보류하고, Hero.FixedUpdate에서 Interacter.FollowHoldItem과 LimitRiseByHoldItem을 호출하는 방식으로 변경 / 넓은 공간에서 위쪽 장애물 상승 제한은 동작 확인
+* 남은 문제: 좁은 공간에서는 들고 있는 아이템이 천장 아래에 끼거나 Hero와 아이템 위치가 어긋나는 현상 남음 / 다음 검토는 판정 범위와 위치 갱신 순서 조정
+
+## 2026-07-11
+
+* 들고 있는 아이템 천장 관통 방지 작업은 복구하고 보류: 기존 Rigidbody/bounds/BoxCast 기반 수정은 안정성이 낮아 제거 방향으로 정리 / 필요 시 Hero 충돌 부피 확장 방식으로 재검토
+* SaveManager 저장 구조 구현: 최고 점수와 누적 제출 아이템 수를 SaveData로 관리 / SaveBestResult에서 최고 점수 갱신과 제출 수 누적 후 JSON 저장
+* PlayScene 저장 연결: StageClear와 GameOver에서 SaveManager.SaveBestResult 호출 / TitleScene Load 버튼은 저장 데이터 존재 여부로 활성화
+* DamageViewSpawner 단순 생성 방식 적용: ItemBox.OnHit 이벤트를 DamageViewSpawner.SpawnDamageView에 연결 / ItemBox 피격 시 대미지 텍스트 표시
+* 사운드 연결 범위 보강: UI 버튼, 점프, 대시, 공격, 피격, 아이템 획득, 상자 피격, 상자 개봉, 제출 효과음 호출 연결
+* TitleSceneView 분리: 타이틀 버튼 onClick 연결, 패널 열기/닫기, 불러오기 데이터 표시, 세팅 UI 표시와 적용을 View로 이동 / TitleScene은 씬 흐름과 저장 데이터 로드 요청 중심으로 정리
+* 세팅 데이터 저장은 보류: 세팅 확인은 SoundManager 런타임 값만 적용 / JSON 저장 데이터에는 최고 점수와 누적 제출 아이템 수만 유지
+* 남은 큰 작업 확인: UI 연출과 결과 패널 보강 / BonusTimeItem 획득 시 clearTime 총량 증가 / TitleSceneView 인스펙터 연결 확인 / 변경된 규칙에 맞춘 맵 재구성
+* 게임 종료 처리 정리: OnResultChanged는 결과 UI 갱신용, OnGameDone은 게임 종료 정리용으로 분리 / _isStageCleared 대신 _isGameDone 하나로 종료 중복과 타이머 갱신을 차단
+* 게임 종료 시 플레이 정지 연결: FinishGame에서 저장, 결과 갱신, 게임 종료 이벤트 발행, 결과 패널 표시를 공통 처리 / Hero 업데이트 정지와 Spawner 정지를 OnGameDone에 연결
+* Enemy 정리 책임 이동: EnemySpawner가 생성한 Enemy를 _spawnedEnemies 목록으로 관리 / 게임 종료 시 ClearEnemies에서 스포너가 만든 적만 제거
+* Projectile 정리 방향 결정: Projectile은 기존 자체 타이머로 사라지므로 게임 종료 이벤트에서 별도 제거하지 않음
+* 다음 작업 후보 정리: 특수 아이템 박스에서 BonusTimeItem 또는 BonusLifeItem을 랜덤 1개 스폰 / 인벤토리 UI 슬롯 개편 / Clear 또는 Achievement 씬에서 업적과 데이터 삭제 확인 / SaveData 업적 누적 데이터 확장
+
+## 2026-07-12
+
+* SaveData 확장 진행: 최고 점수, 클리어 횟수, 누적 획득 아이템 수, 누적 제출 아이템 수, 누적 보너스 시간, 누적 보너스 목숨 수, 누적 적 스턴 수를 기록 대상으로 정리
+* ClearScene 기록 표시 진행: ClearScene이 SaveManager 값을 읽고 ClearSceneView.UpdateAllRecord로 기록 텍스트를 갱신하는 흐름 작성
+* ClearScene 데이터 삭제 흐름 진행: 삭제 확인 후 SaveManager.DeleteData 호출, Title 씬 이동 흐름으로 정리 / 삭제 후 ClearScene에 남아 뷰를 다시 갱신하지 않음
+* ClearScene 단독 실행 오류 원인 확인: 하이어라키에 GameManager가 없으면 GameManager.Instance가 null이 되어 ClearScene.Start에서 기록 접근 시 NullReference 발생 / Clear 씬에도 GameManager 배치 필요 확인
+* 첫 플레이 튜토리얼 필요성 확인: PlayScene 첫 시작 시 조작과 핵심 규칙을 알려주는 튜토리얼 UI가 필요함 / 첫 플레이 판정 방식은 저장 파일 유무 또는 SaveData 튜토리얼 확인 여부 중 결정 필요
+* 첫 플레이 튜토리얼 구현 진행: TutorialDirector / TutorialView 작성 / SaveData.HasSeenTutorial 추가 / PlayScene.SetTimerActive로 튜토리얼 중 타이머 정지 / 완료 후 본 맵 시작 위치 이동과 저장 연결
+* 튜토리얼 단계 정리: 이동 안내는 제외하고 Jump부터 시작 / FastFall은 S 키 기준 / Attack, PickUpItem, HoldItem, PutDownItem, ThrowItem, SubmitItem, ShowGoal 순서로 진행
+* 튜토리얼 단계 전환 방식 변경: 안내 시간 자동 전환은 ShowGoal에만 유지 / Jump, FastFall, Attack은 Hero 성공 이벤트로 전환 / Hold, PutDown, Throw는 Interacter 성공 이벤트를 Hero가 중계해 TutorialDirector가 구독
+* 튜토리얼 키 UI 정리: Canvas UI에서 SpriteLibrary/Resolver 방식은 사용하지 않고 Image에 기본/눌림 Sprite 배열을 번갈아 적용 / Space 키는 가로로 긴 크기를 별도 적용
+* 인벤토리 UI 분리 진행: InventoryView 스크립트가 인벤토리 아이콘, 개수 텍스트, 슬롯 트윈, 초기화와 갱신을 담당하도록 작성 / PlayScene은 InventoryView를 통해 인벤토리 UI를 갱신하는 방향으로 정리
+* 인벤토리 표시 방향 변경 결정: 슬롯이 생겼으므로 ItemData.SortOrder 고정 배치 의존을 줄이고, 아이템을 먹은 순서대로 앞 슬롯부터 보여주는 방식으로 변경 예정
+* 인벤토리 UI 개편 확인: InventoryView 분리와 먹은 순서 기반 슬롯 표시 동작 확인 / 빈 슬롯 표시, 획득 순서 표시, 제출 후 비움 흐름 확인
+* 결과 패널 보강 확인: 결과 문구, 현재 점수, 최고 점수, 이번 판 제출 수, 누적 제출 수 표시 방향 정리 완료
+* UI 연출 보강 진행: ItemBox 피격 흔들림, 보너스 시간 텍스트 두근, 목숨 UI 두근 연출 추가 / 목숨 UI는 인스펙터 원본 스케일 기준으로 연출하도록 수정
+* 들고 있는 아이템 충돌 처리 확인: Interacter의 들기/해제 이벤트를 Hero가 구독하고, Hero CapsuleCollider2D size와 offset을 아이템 세로 길이만큼 확장/복구하는 방식으로 천장 막힘 동작 확인
+* 구현 기준 정리: Ray, Bounds, BoxCast로 위쪽을 검사해 속도를 막는 방식은 보류하고, 들고 있는 동안 Hero 충돌 부피 자체를 키우는 방식을 기준으로 한다
+* 튜토리얼 아이템 박스 처리 정리: 튜토리얼 박스는 기존 _items 배열을 랜덤 없이 전부 스폰하는 방식으로 정리 / 별도 튜토리얼 전용 배열은 사용하지 않음
+* Interact 아이템 내려놓기/던지기 문제 해결: 들고 있는 동안 Rigidbody2D.simulated=false는 유지하고, 내려놓기/던지기 시 부모 해제와 위치 확정 후 simulated=true로 복구하도록 순서 정리
+* Interact 아이템 내려놓기 위치 보정: Interacter.GetGroundedPutDownPos에서 아이템 반높이 기준으로 위에서 아래로 Ground를 탐색하고 hit.point + halfHeight로 y 위치를 확정하도록 수정
+* Interact 아이템 던지기 안정화: Interacter.ThrowItem의 중복 부모 해제를 제거하고 InteractableItem.Throw 내부에서 부모 해제, 상태 복구, 레이어 전환, 리지드바디 복구, 속도 적용을 일괄 처리
+* 튜토리얼 이벤트 구조 정리: TutorialDirector가 Hero를 직접 들지 않고 PlayScene이 Hero 이벤트를 TutorialDirector로 중재하도록 변경
+* 튜토리얼 메인 맵 전환 정리: TutorialDirector가 메인 맵 리스폰 포인트 Transform을 이벤트로 발행하고 Hero.SetRespawnPoint가 리스폰 포인트와 위치를 함께 갱신
+* 튜토리얼 적 정지 애니메이션 보정: SetTutorialIdle(true)에서 MoveSpeed 0, IsGrounded true, Idle 재생으로 Fall 애니메이션 잔류를 방지
+* 튜토리얼 종료 BGM 처리: EndTutorial에서 Stage BGM을 다시 재생해 메인 맵 시작 시 음악이 처음부터 시작되도록 정리
+
+## 2026-07-13
+
+* 튜토리얼 제출 점수 반영 차단: PlayScene이 Hero 제출 이벤트를 직접 Goal에 넘기지 않고 제출 요청 이벤트로 중재 / 튜토리얼 중 Inventory 제출은 점수 요청 생략 / 튜토리얼 중 Interact 제출은 item.Submit만 실행해 아이템 제거는 유지
+* ItemBoxSpawner 설정 단순화: 위치별 ItemBoxPrefab 필드를 제거하고 공통 _itemBox 프리팹 하나만 사용하도록 정리 / 위치별 설정은 SpawnPoint와 RespawnTime만 유지
+* 튜토리얼 맵 카메라 연출 추가: TutorialDirector에 ShowMapCamera 단계 추가 / _cameraViewPoints 배열 순서대로 카메라가 맵 대표 지점을 보여준 뒤 메인 시작 위치로 이동
+* Cinemachine 카메라 연출 방식 변경: Main Camera 직접 이동 대신 CinemachineCamera.Follow 대상을 CameraCtrl에서 교체하는 방식으로 정리 / 카메라 연출 종료 후 Hero Follow 복구
+* 카메라 연출 안정화: TutorialDirector가 카메라 연출 코루틴을 중복 실행하지 않도록 _cameraRoutine으로 관리 / 파괴 시 코루틴 정리 / CameraCtrl은 _camera, target, _heroTransform null 방어 추가
+* Unity 메시지 함수 private 표기 복구: Awake, Start, Update, FixedUpdate, LateUpdate, OnEnable, OnDisable, OnDestroy, OnTriggerEnter2D, OnCollisionEnter2D, OnDrawGizmos는 private 표기를 유지하는 기준으로 정리
+* 튜토리얼 선행 행동 문제 수정: 단계보다 먼저 실행한 행동을 bool로 저장하고 해당 단계 진입 시 이미 완료된 행동이면 다음 단계로 넘기도록 TutorialDirector 정리
+* 최종 코드 정리 진행: TutorialStep.MoveToMain / _isCameraMoving 제거 / ItemBoxSpawner 공통 스폰 잔여 필드 제거 / DamageView, HeroModel, InteractableItem의 미사용 주석 제거
+* 튜토리얼 타이머 제어 책임 정리: TutorialDirector가 PlayScene.SetTimerActive를 직접 호출하지 않고 OnTutorialStarted / OnTutorialEnded 이벤트를 PlayScene이 받아 타이머 정지와 재개를 처리
+* 프로젝트 전체 검토 결과: 빌드 경고 0개, 오류 0개 확인 / 남은 작업은 최종 플레이 테스트와 맵 발판 높이 미세 조정으로 정리
+* 튜토리얼 스킵 처리 보강: 저장 데이터가 있거나 튜토리얼 확인 상태가 있으면 TutorialDirector가 튜토리얼 UI를 숨기고 메인 맵 리스폰 포인트로 이동하도록 정리
+* 튜토리얼 단계 재활성화 방지: 튜토리얼 미진행 상태에서는 TutorialDirector.ChangeStep이 동작하지 않도록 차단 / 불러오기 후 Hero 이벤트가 들어와도 튜토리얼 UI가 다시 뜨지 않게 정리
+* 튜토리얼 획득 수 저장 차단: PlayScene.AddCollectedItemCount에서 튜토리얼 진행 중이면 SaveManager 누적 획득 수에 반영하지 않도록 수정
+* SaveManager 저장 파일 확인 안정화: HasSaveData가 저장 경로 초기화 순서에 덜 흔들리도록 GetSavePath 기준으로 파일 존재 여부를 확인하도록 변경
